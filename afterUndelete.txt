@@ -1,0 +1,29 @@
+public void afterUndelete(List<Contact> con){
+        System.debug('the con is ' + con.size());
+        conAcctsIdSet = new Set<Id>();
+        for(Contact c : Con){
+            conAcctsIdSet.add(c.AccountId);
+        }
+        if(conAcctsIdSet.size()>0){
+            conWithAcctsList = [Select Id,Name, (Select Id,Name,Sequence_Number__c from Contacts) from Account where id in :conAcctsIdSet];
+            for(Account accts : conWithAcctsList ){
+                Integer size = 0;
+                for(Contact c : con){ // getting the size of the undeleted related records to get the actual seq no for the updation.
+                    if(accts.id == c.AccountId){
+                        System.debug('Inisde');
+                        size++;
+                    }
+                }
+                Decimal sqno = accts.contacts.size() - size;
+                for(Contact conRec : [Select id,Sequence_Number__c,AccountId from Contact where id in :trigger.new]){ 
+                    if(accts.id == conRec.AccountId){
+                        conRec.Sequence_Number__c = (sqno++) + 1;
+                        conList.add(conRec);
+                    }
+                }
+            }     
+        }
+        if(conList.size()>0){
+            update conList;
+        }
+}
